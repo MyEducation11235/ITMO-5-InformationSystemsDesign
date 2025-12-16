@@ -1,0 +1,101 @@
+@startuml
+!theme plain
+
+interface "IDriversRoute"
+
+' Основные компоненты системы
+package "TransLogix Система Логистической Оптимизации" {
+  component "Route Optimizer" as RO {
+    component "Базовый оптимизатор" as BasicOpt
+    component "ИИ-оптимизатор" as AIOpt
+  }
+  
+  component "Warehouse Manager" as WM
+  component "Integration Gateway" as IG {
+    component "Коннектор карт" as MapConnector
+    component "Коннектор погоды" as WeatherConnector
+    component "Коннектор GPS" as GPSConnector
+  }
+  interface "IIntegrationsData" as IIntegrations
+  
+  component "AI Engine" as AIE {
+    component "Модель ML" as MLModel
+    component "Тренировочный модуль" as TrainingModule
+    component "Валидатор" as Validator
+  }
+  
+  component "Reporting Service" as RS
+
+  component "Drivers Manager" as DM
+
+  database "Маршруты" as RoutesDB
+  database "Заказы" as OrdersDB
+  database "Транспорт" as VehiclesDB
+  database "Водители" as DriversDB
+  
+  ' Определение интерфейсов
+  interface "IGetWarehouseData" as IWarehouse
+  interface "IReporting" as IReport
+}
+
+' Внешние компоненты/сервисы
+node "Внешние Сервисы" {
+  component "Погодный API" as WeatherAPI
+  component "Картографический API" as MapsAPI
+  component "GPS Трекер API" as GPSAPI
+  interface "IWeatherData" as IWeather
+  interface "IMapsData" as IMaps
+  interface "IGPSData" as IGPS
+}
+
+' Связи между внутренними компонентами
+BasicOpt --> AIOpt : передает для улучшения
+' MapConnector --> WeatherConnector
+' WeatherConnector --> GPSConnector
+MLModel --> Validator
+TrainingModule --> Validator
+
+' Интерфейсные связи для основных компонентов
+WM -- IWarehouse
+RS --( IReport : "отчёты о работе"
+DM -- IDriversRoute : "Данные для приложений водителей"
+
+' Интерфейсные связи для внешних сервисов
+WeatherAPI -- IWeather
+MapsAPI -- IMaps
+GPSAPI -- IGPS
+
+' Зависимости (использование интерфейсов)
+RO -up-( IIntegrations : "данные о трафике, погоде и т.п."
+RO --( IWarehouse : "заказы и транспорт"
+RO -up- IReport
+
+IG -- IIntegrations
+
+' Зависимости от внешних интерфейсов
+WeatherConnector -up-( IWeather
+MapConnector -up-( IMaps
+GPSConnector -up-( IGPS
+
+AIOpt ..> AIE : "Истользует ИИ для оптимизации"
+
+' Связи с базами данных
+WM --> OrdersDB
+WM --> VehiclesDB
+WM --> DriversDB
+RO --> RoutesDB
+DM --> DriversDB
+DM --( RoutesDB
+
+' Направление передачи данных
+' IG -right-> RO : "данные о трафике и погоде"
+
+' Отметки для типов компонентов
+note left of RO : Сервис оптимизатор маршрутов
+note top of WM : Сервис складов
+note top of DM : Сервис водителей
+note top of IG : Сервис получения внешних данных
+note top of AIE : Сервис моделей ИИ
+note top of RS : Сервис отчетности
+
+@enduml
