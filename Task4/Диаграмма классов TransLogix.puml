@@ -1,0 +1,170 @@
+@startuml
+!theme plain
+
+class RouteOptimizer {
+  - basicOptimizer: BasicOptimizer
+  - aiOptimizer: AIOptimizer
+  - integrationModule: IntegrationModule
+  - routes: List<Route>
+  + optimizeWarehouse(warehouse: Warehouse): List<Route>
+  + optimizeSingleOrder(order: Order, warehouse: Warehouse): Route
+  + updateRoute(routeId: String, newParams: Map): Route
+  + getOptimizationMetrics(): Metrics
+}
+
+class Route {
+  - routeId: String
+  - points: List<Point>
+  - estimatedTime: int
+  - distance: double
+  - confidenceScore: double
+  - vehicle: Vehicle
+  - orders: List<Order>
+  + calculateDistance(): double
+  + getEstimatedTime(): int
+  + getConfidenceScore(): double
+  + addOrder(order: Order): void
+  + removeOrder(order: Order): void
+  + assignVehicle(vehicle: Vehicle): void
+}
+
+class Order {
+  - orderId: String
+  - destination: Address
+  - weight: double
+  - priority: int
+  - status: OrderStatus
+  + getPriority(): int
+  + getDetails(): OrderDetails
+  + updateStatus(newStatus: OrderStatus): void
+}
+
+class Warehouse {
+  - warehouseId: String
+  - location: Address
+  - inventory: Map<Product, Integer>
+  - orders: List<Order>
+  - vehicles: List<Vehicle>
+  + checkStock(product: Product): int
+  + updateInventory(product: Product, quantity: int): void
+  + addOrder(order: Order): void
+  + removeOrder(order: Order): void
+  + assignVehicle(vehicle: Vehicle): void
+  + unassignVehicle(vehicle: Vehicle): void
+  + getPendingOrders(): List<Order>
+  + getAvailableVehicles(): List<Vehicle>
+}
+
+class Vehicle {
+  - vehicleId: String
+  - capacity: double
+  - currentLocation: Point
+  - status: VehicleStatus
+  - driver: Driver
+  + getCurrentLocation(): Point
+  + updateStatus(newStatus: VehicleStatus): void
+  + assignDriver(driver: Driver): void
+  + isAvailable(): boolean
+}
+
+class Driver {
+  - driverId: String
+  - name: String
+  - licenseNumber: String
+  - experienceYears: int
+  - status: DriverStatus
+  + getDriverInfo(): String
+  + isAvailable(): boolean
+  + updateStatus(newStatus: DriverStatus): void
+}
+
+class IntegrationModule {
+  - apiKeys: Map<String, String>
+  - cache: CacheService
+  - weatherService: WeatherService
+  - mapService: MapService
+  - gpsTrackingService: GPSTrackingService
+  + getTrafficData(area: Area): TrafficInfo
+  + getWeatherForecast(location: Point): Weather
+  + getRouteFromMapService(points: List<Point>): MapRoute
+  + trackVehicleGPS(vehicleId: String): GPSPosition
+  + validateAddress(address: Address): boolean
+}
+
+class WeatherService {
+  - apiKey: String
+  - baseUrl: String
+  + getCurrentWeather(location: Point): Weather
+  + getForecast(location: Point, days: int): List<Weather>
+}
+
+class MapService {
+  - apiKey: String
+  - provider: String
+  + calculateRoute(points: List<Point>): RouteData
+  + getDistanceMatrix(origins: List<Point>, destinations: List<Point>): Matrix
+  + geocodeAddress(address: String): Point
+}
+
+class GPSTrackingService {
+  - devices: Map<String, GPSDevice>
+  + getPosition(deviceId: String): Position
+  + getHistory(deviceId: String, period: DateRange): List<Position>
+  + sendCommand(deviceId: String, command: String): boolean
+}
+
+interface OptimizationAlgorithm {
+  + findOptimalRoute(warehouse: Warehouse, orders: List<Order>): List<Route>
+  + calculateCost(route: Route): double
+}
+
+class BasicOptimizer {
+  - algorithmType: String
+  + findOptimalRoute(warehouse: Warehouse, orders: List<Order>): List<Route>
+  + calculateCost(route: Route): double
+}
+
+class AIOptimizer {
+  - model: AIModel
+  - trainingData: DataSet
+  - confidenceThreshold: double
+  - reportGenerator: ReportGenerator
+  + findOptimalRoute(warehouse: Warehouse, orders: List<Order>): List<Route>
+  + calculateCost(route: Route): double
+  + enhanceRoute(baseRoute: Route, context: OptimizationContext): Route
+  + evaluateRouteQuality(route: Route): double
+  + predictTime(params: PredictionParams): int
+}
+
+class ReportGenerator {
+  + generateRouteReport(route: Route): Report
+  + generatePerformanceReport(period: DateRange): Report
+  + generateAIMetricsReport(model: AIModel): Report
+}
+
+RouteOptimizer --> Route : создает >
+RouteOptimizer "0..1" ..> "1" IntegrationModule : использует >
+RouteOptimizer "1" --> "0..*" Warehouse : использует как входные данные >
+
+Warehouse "1" o-- "0..*" Order : содержит >
+Warehouse "1" o-- "0..*" Vehicle : содержит >
+Route "1" o-- "1" Vehicle : назначанный транспорт >
+Route "1" o-- "1..*" Order : включает заказы >
+Vehicle "0..*" --> "1" Driver : управляется >
+
+AIOptimizer "1" --> "0..1" ReportGenerator : предоставляет данные >
+
+IntegrationModule "1" *-- "1" WeatherService : содержит >
+IntegrationModule "1" *-- "1" MapService : содержит >
+IntegrationModule "1" *-- "1" GPSTrackingService : содержит >
+
+RouteOptimizer "1" *-- "1" BasicOptimizer : содержит для базовой оптимизации >
+RouteOptimizer "1" *-- "1" AIOptimizer : содержит для ИИ оптимизации >
+
+BasicOptimizer ..|> OptimizationAlgorithm : реализует >
+AIOptimizer ..|> OptimizationAlgorithm : реализует >
+
+BasicOptimizer "1" --> "0..*" Route : создает >
+AIOptimizer "1" --> "0..*" Route : улучшает >
+
+@enduml
